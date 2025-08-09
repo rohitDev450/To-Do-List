@@ -18,7 +18,7 @@ pipeline {
        }
         stage('Docker Build') {
             steps {
-                   sh "docker build -t rohitar/To-do-list:${DOCKER_TAG} ."
+                   sh "docker build -t rohitar/to-do-list:${DOCKER_TAG} ."
             }
         }
          stage('Test Code') {
@@ -28,12 +28,12 @@ pipeline {
         }
         stage('Docker Image Push') {
             steps {
-                sh "docker push rohitar/To-do-list:${DOCKER_TAG}"
+                sh "docker push rohitar/to-do-list:${DOCKER_TAG}"
                     }
            }
         stage('Code Deploy') {
             steps {
-                  sh "docker run -d -p 8081:80 --name To-do-list rohitar/To-do-list:${DOCKER_TAG}"
+                  sh "docker run -d -p 8081:80 --name To-do-list rohitar/to-do-list:${DOCKER_TAG}"
             }
           }
      }
