@@ -8,7 +8,7 @@ pipeline {
     stages {
         stage('Git Clone') {
             steps {
-                git url:'https://github.com/rohitDev450/Password-Generator.git', branch:'main'
+                git url:'https://github.com/rohitDev450/To-Do-List.git', branch:'main'
             }
        }
        stage('Docker Login') {
