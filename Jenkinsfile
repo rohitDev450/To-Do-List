@@ -3,6 +3,7 @@ pipeline {
     environment{
         DOCKER_TAG = "${BUILD_NUMBER}"
         DOCKER_CREDS = credentials('Docker_user') 
+        KUBECONFIG = /var/lib/jenkins/.kube/config
     }
 
     stages {
@@ -33,7 +34,10 @@ pipeline {
            }
         stage('Code Deploy') {
             steps {
-                  sh "docker run -d -p 8081:80 --name To-do-list rohitar/to-do-list:${DOCKER_TAG}"
+                  sh '''
+                    kubectl apply -f deployment.yaml
+                    kubectl apply -f service.yaml
+                '''
             }
           }
      }
