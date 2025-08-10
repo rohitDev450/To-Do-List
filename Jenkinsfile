@@ -3,7 +3,7 @@ pipeline {
     environment{
         DOCKER_TAG = "${BUILD_NUMBER}"
         DOCKER_CREDS = credentials('Docker_user') 
-        KUBECONFIG = /var/lib/jenkins/.kube/config
+        KUBECONFIG = '/var/lib/jenkins/.kube/config'
     }
 
     stages {
@@ -35,8 +35,8 @@ pipeline {
         stage('Code Deploy') {
             steps {
                   sh '''
-                    kubectl apply -f deployment.yaml
-                    kubectl apply -f service.yaml
+                    kubectl apply -f k8s/deployment.yaml
+                    kubectl apply -f k8s/service.yaml
                 '''
             }
           }
