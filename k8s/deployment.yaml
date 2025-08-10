@@ -16,6 +16,6 @@ spec:
     spec:
       containers:
       - name: todo-container
-        image: rohitar/to-do-list:17
+        image: rohitar/to-do-list:latest
         ports:
         - containerPort: 3000

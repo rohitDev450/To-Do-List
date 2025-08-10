@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment{
-        DOCKER_TAG = "${BUILD_NUMBER}"
+        DOCKER_TAG = "latest"
         DOCKER_CREDS = credentials('Docker_user') 
         KUBECONFIG = '/var/lib/jenkins/.kube/config'
     }
