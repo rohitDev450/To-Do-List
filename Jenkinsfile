@@ -34,10 +34,10 @@ pipeline {
            }
         stage('Code Deploy') {
             steps {
-                  sh '''
-                    kubectl apply -f deployment.yaml
-                    kubectl apply -f service.yaml
-                '''
+                 sh """
+                   kubectl apply -f ${WORKSPACE}/k8s/deployment.yaml
+                   kubectl apply -f ${WORKSPACE}/k8s/service.yaml
+                    """
             }
           }
      }
