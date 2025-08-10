@@ -15,13 +15,14 @@ pipeline {
        stage('Docker Login') {
             steps {
                 sh "echo $DOCKER_CREDS_PSW | docker login -u $DOCKER_CREDS_USR --password-stdin"
-          }
-       }stage('Debug Workspace') {
+            }
+        }
+       stage('Debug Workspace') {
            steps {
              sh 'pwd'
              sh 'ls -R'
             }
-  }
+        }
         stage('Docker Build') {
             steps {
                    sh "docker build -t rohitar/to-do-list:${DOCKER_TAG} ."
@@ -44,6 +45,6 @@ pipeline {
                    kubectl apply -f ${WORKSPACE}/k8s/service.yaml
                     """
             }
-          }
-     }
+        }
+   }
 }
