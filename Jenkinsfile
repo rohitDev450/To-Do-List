@@ -12,6 +12,12 @@ pipeline {
                git url: 'https://github.com/rohitDev450/To-Do-List.git', branch: 'main', changelog: false, poll: false
             }
        }
+        stage('Debug Workspace') {
+           steps {
+                sh 'pwd'
+                sh 'ls -R'
+            }
+        }
        stage('Docker Login') {
             steps {
                 sh "echo $DOCKER_CREDS_PSW | docker login -u $DOCKER_CREDS_USR --password-stdin"
