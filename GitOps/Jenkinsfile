@@ -1,0 +1,85 @@
+@Library('Shared') _
+pipeline {
+    agent any
+
+    parameters {
+        string(
+            name: 'DOCKER_TAG',
+            defaultValue: '',
+            description: 'Tag for Docker Images From CI'
+        )
+    }
+
+    stages {
+        stage("Workspace cleanup") {
+            steps {
+                script {
+                    cleanWs()
+                }
+            }
+        }
+
+        stage('Git: Code Checkout') {
+            steps {
+                script {
+                    // ✅ Checkout default branch "main"
+                    code_checkout(
+                        "https://github.com/rohitDev450/To-Do-List.git",
+                        "main"
+                    )
+                }
+            }
+        }
+
+        stage('Verify: Docker Image Tags') {
+            steps {
+                script {
+                    echo "DOCKER_TAG: ${params.DOCKER_TAG}"
+                }
+            }
+        }
+
+        stage("Update: Kubernetes manifests") {
+            steps {
+                script {
+                    dir('k8s') {
+                        sh """
+                            sed -i -E "s#image:.*rohitar/to-do-list:.*#image: rohitar/to-do-list:${params.DOCKER_TAG}#g" deployment.yaml
+                        """
+                    }
+                }
+            }
+        }
+
+        stage("Git: Code update and push to GitHub") {
+            steps {
+                script {
+                    withCredentials([gitUsernamePassword(
+                        credentialsId: 'Github-cred',
+                        gitToolName: 'Default'
+                    )]) {
+                        sh '''
+                            echo "Checking repository status:"
+                            git status
+
+                            echo "Configuring Git identity:"
+                            git config user.name "Rohit Aute"
+                            git config user.email "rohit.aute450@gmail.com"
+
+                            git checkout main || git checkout -b main
+
+                            echo "Adding changes to git:"
+                            git add .
+
+                            echo "Committing changes (if any):"
+                            git commit -m "Updated image tags" || echo "No changes to commit"
+
+                            echo "Pushing changes to GitHub:"
+                            git push origin HEAD:main
+                        '''
+                    }
+                }
+            }
+        }
+    }
+}
