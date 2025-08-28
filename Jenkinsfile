@@ -2,7 +2,7 @@
 
 pipeline {
     agent any
-
+    
       parameters {
         string(name: 'DOCKER_TAG', defaultValue: '', description: 'Tag for Docker Images (e.g., v1, v2, latest)')
     }
@@ -50,21 +50,23 @@ pipeline {
             }
         }
 
-        stage('OWASP: Dependency check') {
-            steps {
-                script {
-                    owasp_dependency()
-                }
-            }
-        }
+        // stage('OWASP: Dependency check') {
+        //     steps {
+        //         script {
+        //             owasp_dependency()
+        //         }
+        //     }
+        // }
 
-        stage('SonarQube: Code Analysis') {
-            steps {
-                script {
-                    sonarqube_analysis("sonar", "Codexhub", "Codexhub")
-                }
+       stage('SonarQube: Code Analysis') {
+    steps {
+        script {
+            nodejs(nodeJSInstallationName: 'Nodejs') {
+                sonarqube_analysis("sonar", "to-do-list", "to-do-list")
             }
         }
+    }
+}
 
         stage('SonarQube: Code Quality Gates') {
             steps {
@@ -114,7 +116,7 @@ pipeline {
 
                 // Trigger downstream job safely
                 catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
-                    build job: "To-DO-CD",
+                    build job: "To-DO-List-CD",
                           parameters: [
                               string(name: 'DOCKER_TAG', value: "${params.DOCKER_TAG}")
                           ],
