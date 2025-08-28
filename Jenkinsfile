@@ -1,50 +1,123 @@
+@Library('Shared') _
+
 pipeline {
     agent any
-    environment{
-        DOCKER_TAG = "latest"
-        DOCKER_CREDS = credentials('Docker_user') 
-        KUBECONFIG = '/var/lib/jenkins/.kube/config'
+
+    environment {
+        KUBECONFIG = 'kubeconfig'
+        SONAR_HOME = tool "sonar"
     }
 
     stages {
+        stage('Validate Parameters') {
+            steps {
+                script {
+                    if (!params.DOCKER_TAG?.trim()) {
+                        error '❌ DOCKER_TAG parameter is required! Please provide a tag value (e.g., v1, v2).'
+                    } else {
+                        echo "✅ DOCKER_TAG is set to: ${params.DOCKER_TAG}"
+                    }
+                }
+            }
+        }
+
+        stage('Workspace cleanup') {
+            steps {
+                cleanWs()
+            }
+        }
+
         stage('Git Clone') {
             steps {
-               git url: 'https://github.com/rohitDev450/To-Do-List.git', branch: 'main', changelog: false, poll: false
+                script {
+                    code_checkout(
+                        "https://github.com/rohitDev450/To-Do-List.git",
+                        "main"
+                    )
+                }
             }
-       }
-       stage('Docker Login') {
+        }
+
+        stage('Trivy: Filesystem scan') {
             steps {
-                sh "echo $DOCKER_CREDS_PSW | docker login -u $DOCKER_CREDS_USR --password-stdin"
+                script {
+                    trivy_scan()
+                }
             }
         }
-       stage('Debug Workspace') {
-           steps {
-             sh 'pwd'
-             sh 'ls -R'
+
+        stage('OWASP: Dependency check') {
+            steps {
+                script {
+                    owasp_dependency()
+                }
             }
         }
+
+        stage('SonarQube: Code Analysis') {
+            steps {
+                script {
+                    sonarqube_analysis("sonar", "Codexhub", "Codexhub")
+                }
+            }
+        }
+
+        stage('SonarQube: Code Quality Gates') {
+            steps {
+                script {
+                    sonarqube_code_quality()
+                }
+            }
+        }
+
+        stage('Docker Login') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'docker',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh '''
+                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                    '''
+                }
+            }
+        }
+
         stage('Docker Build') {
             steps {
-                   sh "docker build -t rohitar/to-do-list:${DOCKER_TAG} ."
+                sh "docker build -t rohitar/to-do-list:${DOCKER_TAG} ."
             }
         }
-         stage('Test Code') {
-            steps {
-                   echo "Code is testing by devloper"
-            }
-        }
+
         stage('Docker Image Push') {
             steps {
                 sh "docker push rohitar/to-do-list:${DOCKER_TAG}"
-                    }
-           }
-        stage('Code Deploy') {
-            steps {
-                 sh """
-                   kubectl apply -f ${WORKSPACE}/k8s/deployment.yaml
-                   kubectl apply -f ${WORKSPACE}/k8s/service.yaml
-                    """
             }
         }
-   }
+    }
+
+    post {
+        success {
+            script {
+                // Archive XML artifacts safely
+                def xmlFiles = findFiles(glob: '*.xml')
+                if (xmlFiles.length > 0) {
+                    archiveArtifacts artifacts: '*.xml', followSymlinks: false
+                } else {
+                    echo "No XML files to archive"
+                }
+
+                // Trigger downstream job safely
+                catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
+                    build job: "To-DO-CD",
+                          parameters: [
+                              string(name: 'DOCKER_TAG', value: "${params.DOCKER_TAG}")
+                          ],
+                          wait: false,
+                          propagate: false
+                }
+            }
+        }
+    }
 }
