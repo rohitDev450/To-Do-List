@@ -3,6 +3,10 @@
 pipeline {
     agent any
 
+      parameters {
+        string(name: 'DOCKER_TAG', defaultValue: '', description: 'Tag for Docker Images (e.g., v1, v2, latest)')
+    }
+
     environment {
         KUBECONFIG = 'kubeconfig'
         SONAR_HOME = tool "sonar"
